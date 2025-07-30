@@ -1,0 +1,27 @@
+name: Doviz Agent Schedule
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Her 30 dakikada bir çalışacak
+
+jobs:
+  run-doviz-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodları al
+        uses: actions/checkout@v3
+
+      - name: Python kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Gerekli paketleri kur
+        run: pip install -r requirements.txt
+
+      - name: Scripti çalıştır
+        run: python doviz_agent.py
+
+      - name: CSV dosyasını göster
+        run: cat banka_makas.csv
