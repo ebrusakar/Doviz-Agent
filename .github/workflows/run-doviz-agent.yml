@@ -1,8 +1,10 @@
 name: Doviz Agent Schedule
 
 on:
+  workflow_dispatch:   # Elle tetikleme için
   schedule:
-    - cron: '*/30 * * * *'  # Her 30 dakikada bir çalışacak
+    - cron: '*/30 * * * *'  # Her 30 dakikada bir otomatik tetikleme
+
 
 jobs:
   run-doviz-agent:
