@@ -2,42 +2,51 @@ name: Doviz Agent
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # Her 30 dakikada bir çalışır
-  workflow_dispatch:        # Manuel çalıştırmak için
+    - cron: "*/30 * * * *"  # Her 30 dakikada bir
+  workflow_dispatch:  # Manuel tetikleme
 
 jobs:
-  run:
+  scrape:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Repo'yu Checkout Et
-      uses: actions/checkout@v3
+      - name: Kod deposunu çek
+        uses: actions/checkout@v4
 
-    - name: Python Kur
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Python kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Chrome ve ChromeDriver Yükle
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget unzip xvfb libxi6 libgconf-2-4
-        sudo apt-get install -y google-chrome-stable || sudo apt-get install -y chromium-browser chromium-chromedriver
-        CHROME_DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)
-        wget https://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/chromedriver
-        sudo chmod +x /usr/local/bin/chromedriver
+      - name: Chrome ve bağımlılıkları kur
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip xvfb libxi6 libgbm-dev libnss3 libasound2
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -fy install
 
-    - name: Gerekli Python Kütüphanelerini Kur
-      run: |
-        pip install selenium pandas gspread google-auth
+      - name: ChromeDriver kur
+        run: |
+          CHROME_VERSION=$(google-chrome --version | cut -d " " -f3 | cut -d "." -f1)
+          DRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}")
+          wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${DRIVER_VERSION}/linux64/chromedriver-linux64.zip
+          unzip chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
 
-    - name: Google Service Account Key’i Oluştur
-      run: |
-        echo "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 --decode > service_account.json
+      - name: Python kütüphanelerini kur
+        run: |
+          pip install --upgrade pip
+          pip install selenium pandas gspread oauth2client google-auth google-auth-oauthlib google-auth-httplib2
 
-    - name: Python Scripti Çalıştır
-      env:
-        SHEET_ID: ${{ secrets.SHEET_ID }}
-      run: python doviz_agent.py
+      - name: Google Sheets kimlik bilgilerini oluştur
+        run: |
+          echo "$GOOGLE_SHEETS_KEY_BASE64" | base64 -d > service_account.json
+        env:
+          GOOGLE_SHEETS_KEY_BASE64: ${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}
+
+      - name: Doviz Agent çalıştır
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+        run: |
+          python doviz_agent.py
