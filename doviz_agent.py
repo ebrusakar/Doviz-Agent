@@ -1,33 +1,35 @@
-import os
-import pandas as pd
-from datetime import datetime
-import gspread
-from google.oauth2.service_account import Credentials
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+import pandas as pd
+from datetime import datetime
+import os
 import time
+import gspread
+from google.oauth2.service_account import Credentials
 
-# --- Google Sheets Bağlantısı ---
+# Google Sheets Bağlantısı
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
 client = gspread.authorize(creds)
 SPREADSHEET_ID = os.getenv("SHEET_ID")
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
-# --- Selenium setup ---
+# Selenium Chrome Headless ayarları
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
+options.binary_location = "/usr/bin/chromium-browser"  # Chromium yolu (Ubuntu runner için)
+
 driver = webdriver.Chrome(options=options)
 
 def temizle(text):
     return text.replace("TL", "").replace(" ", "").replace(",", ".").strip()
 
-def scrape_currency(url, currency_name):
+def scrape_kur(kur_adi, url):
     driver.get(url)
-    time.sleep(3)  # JS'nin yüklenmesi için bekle
+    time.sleep(3)  # Sayfanın yüklenmesini bekle
     rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
     
     data = []
@@ -42,21 +44,21 @@ def scrape_currency(url, currency_name):
             continue
         banka = cols[0].text.strip()
         makas = satis - alis
-        data.append([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), currency_name, banka, alis, satis, makas])
+        data.append([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), kur_adi, banka, alis, satis, makas])
     return data
 
-data_all = []
-data_all += scrape_currency("https://kur.doviz.com/serbest-piyasa/amerikan-dolari", "USD")
-data_all += scrape_currency("https://kur.doviz.com/serbest-piyasa/euro", "EUR")
+# Veri çek
+tum_data = []
+tum_data += scrape_kur("USD", "https://kur.doviz.com/serbest-piyasa/amerikan-dolari")
+tum_data += scrape_kur("EUR", "https://kur.doviz.com/serbest-piyasa/euro")
 
 driver.quit()
 
-# --- Sheets'e Yaz ---
-df = pd.DataFrame(data_all, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
-
-if df.empty:
+# Google Sheets'e yaz
+if not tum_data:
     print("⚠️ Veri bulunamadı, Sheets güncellenmedi.")
 else:
+    df = pd.DataFrame(tum_data, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
     sheet.clear()
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+    sheet.update([df.columns.tolist()] + df.values.tolist())
     print("✅ Google Sheets güncellendi!")
