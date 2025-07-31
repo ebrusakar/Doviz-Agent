@@ -8,19 +8,19 @@ import time
 import gspread
 from google.oauth2.service_account import Credentials
 
-# Google Sheets Bağlantısı
+# --- Google Sheets Bağlantısı ---
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
 client = gspread.authorize(creds)
+
 SPREADSHEET_ID = os.getenv("SHEET_ID")
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
-# Selenium Chrome Headless ayarları
+# Chrome Headless ayarları
 options = Options()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
-options.binary_location = "/usr/bin/chromium-browser"  # Chromium yolu (Ubuntu runner için)
 
 driver = webdriver.Chrome(options=options)
 
@@ -47,18 +47,15 @@ def scrape_kur(kur_adi, url):
         data.append([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), kur_adi, banka, alis, satis, makas])
     return data
 
-# Veri çek
+# USD ve EUR verilerini çek
 tum_data = []
 tum_data += scrape_kur("USD", "https://kur.doviz.com/serbest-piyasa/amerikan-dolari")
 tum_data += scrape_kur("EUR", "https://kur.doviz.com/serbest-piyasa/euro")
 
 driver.quit()
 
-# Google Sheets'e yaz
-if not tum_data:
-    print("⚠️ Veri bulunamadı, Sheets güncellenmedi.")
-else:
-    df = pd.DataFrame(tum_data, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
-    sheet.clear()
-    sheet.update([df.columns.tolist()] + df.values.tolist())
-    print("✅ Google Sheets güncellendi!")
+# --- Sheets'e EKLE (clear yerine append) ---
+df = pd.DataFrame(tum_data, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
+sheet.append_rows(df.values.tolist())
+
+print("✅ Yeni veriler Google Sheets'e eklendi!")
