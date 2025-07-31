@@ -3,7 +3,7 @@ name: Doviz Agent
 on:
   schedule:
     - cron: "*/30 * * * *"  # Her 30 dakikada bir
-  workflow_dispatch:  # Manuel tetikleme
+  workflow_dispatch:  # Manuel çalıştırma
 
 jobs:
   scrape:
@@ -21,7 +21,7 @@ jobs:
       - name: Chrome ve bağımlılıkları kur
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip xvfb libxi6 libgbm-dev libnss3 libasound2
+          sudo apt-get install -y wget unzip xvfb libxi6 libgbm-dev libnss3 libasound2t64
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -fy install
 
