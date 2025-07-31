@@ -1,45 +1,29 @@
-name: Doviz Agent Scrape
+name: Doviz Agent to Google Sheets
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # Her 30 dakikada bir
-  workflow_dispatch:          # Elle tetikleme
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
 
 jobs:
-  scrape-and-push:
+  run:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Repo'yu klonla
-      uses: actions/checkout@v3
-
-    - name: Python kur
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-
-    - name: Gerekli paketleri yükle
-      run: |
-        python -m pip install --upgrade pip
-        pip install selenium pandas requests beautifulsoup4
-
-    - name: Chrome ve driver kur
-      uses: browser-actions/setup-chrome@v1
-      with:
-        chrome-version: latest
-
-    - name: doviz_agent.py scriptini çalıştır
-      run: python doviz_agent.py
-
-    - name: CSV'yi commit et ve pushla
-      env:
-        TOKEN: ${{ secrets.PAT_TOKEN }}
-      run: |
-        git config --local user.email "actions@github.com"
-        git config --local user.name "GitHub Actions"
-        git remote set-url origin https://x-access-token:${TOKEN}@github.com/ebrusakar/doviz-agent.git
-        git add banka_makas.csv
-        git commit -m "CSV güncellemesi $(date)" || echo "No changes to commit"
-        git push origin main
-
-
+      - uses: actions/checkout@v3
+      
+      - name: Python Setup
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install pandas requests beautifulsoup4 gspread google-auth
+      
+      - name: Create service account file
+        run: echo '${{ secrets.GOOGLE_SHEETS_KEY }}' > service_account.json
+      
+      - name: Run Script
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+        run: python doviz_agent.py
