@@ -1,0 +1,38 @@
+name: Doviz Bot
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"  # Her 30 dakikada bir çalışır
+  workflow_dispatch: # Elle tetiklemek için
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repo'yu çek
+        uses: actions/checkout@v3
+
+      - name: Python kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Gerekli paketleri yükle
+        run: pip install -r requirements.txt
+
+      - name: Chrome ve ChromeDriver yükle
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          export PATH=$PATH:/usr/lib/chromium-browser/
+
+      - name: Botu çalıştır
+        run: python doviz_agent.py
+
+      - name: CSV'yi commit et ve pushla
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add banka_makas.csv
+          git commit -m "CSV Güncellendi $(date)" || echo "No changes"
+          git push
