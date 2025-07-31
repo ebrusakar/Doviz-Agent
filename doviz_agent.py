@@ -11,7 +11,7 @@ SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
 client = gspread.authorize(creds)
 
-SPREADSHEET_ID = os.getenv("SHEET_ID")  # Secret'tan al
+SPREADSHEET_ID = os.getenv("SHEET_ID")
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 # --- Veri Çekme (USD ve EUR) ---
@@ -44,4 +44,4 @@ df = pd.DataFrame(data_all, columns=["Tarih", "Kur", "Banka", "Alış", "Satış
 sheet.clear()
 sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
-print("Google Sheets güncellendi!")
+print("✅ Google Sheets güncellendi!")
