@@ -6,23 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  run:
+  scrape-and-update:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser chromium-chromedriver
-          python3 -m pip install --upgrade pip
-          pip install pandas requests beautifulsoup4 gspread google-auth selenium
+          python -m pip install --upgrade pip
+          pip install pandas requests beautifulsoup4 gspread google-auth
 
-    - name: Create service_account.json
-      run: echo "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 -d > service_account.json
-      
-      - name: Run Script
+      - name: Create service_account.json
+        run: printf "%s" "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 -d > service_account.json
+
+      - name: Run scraper
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
-        run: python3 doviz_agent.py
+        run: python doviz_agent.py
