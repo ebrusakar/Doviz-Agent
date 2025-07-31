@@ -2,7 +2,7 @@ name: Doviz Agent to Google Sheets
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # 30 dakikada bir
+    - cron: "*/30 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,21 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Python Setup
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install dependencies
-        run: |
-          pip install pandas requests beautifulsoup4 gspread google-auth
-      
-      - name: Create service account file from Base64
-        run: |
-          echo "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 --decode > service_account.json
-      
-      - name: Run Script
+        run: pip install pandas requests gspread google-auth
+
+      - name: Create service account file from base64
+        run: echo "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 --decode > service_account.json
+
+      - name: Run script
         env:
           SHEET_ID: ${{ secrets.SHEET_ID }}
+          EXCHANGE_RATE_KEY: ${{ secrets.EXCHANGE_RATE_KEY }}
         run: python doviz_agent.py
