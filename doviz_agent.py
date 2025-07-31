@@ -4,14 +4,14 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
+import os
 
 # --- Google Sheets Bağlantısı ---
-SCOPE = ["https://www.googleapis.com/auth/spreadsheets", 
-         "https://www.googleapis.com/auth/drive"]
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
 client = gspread.authorize(creds)
 
-SPREADSHEET_ID = "SHEET_ID"  # GitHub Secret ile alacağız
+SPREADSHEET_ID = os.getenv("SHEET_ID")  # Secret'tan al
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
 # --- Veri Çekme (USD ve EUR) ---
