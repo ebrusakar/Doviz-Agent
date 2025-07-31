@@ -40,4 +40,5 @@ jobs:
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/ebrusakar/doviz-agent.git
         git add banka_makas.csv
         git commit -m "CSV güncellemesi $(date)" || echo "No changes to commit"
-        git push origin main
+        git push origin main || (git status && git log -1 && exit 1)
+
