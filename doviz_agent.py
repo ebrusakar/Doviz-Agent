@@ -1,48 +1,47 @@
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 from datetime import datetime
-import os
+import gspread
+from google.oauth2.service_account import Credentials
 
-def temizle(text):
-    return text.replace("TL", "").replace(" ", "").replace(",", ".").strip()
+# --- Google Sheets Bağlantısı ---
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets", 
+         "https://www.googleapis.com/auth/drive"]
+creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPE)
+client = gspread.authorize(creds)
 
-def scrape_kur(kur_adi, url):
-    response = requests.get(url)
-    if response.status_code != 200:
-        print(f"{kur_adi} verisi alınamadı!")
-        return []
+SPREADSHEET_ID = "SHEET_ID"  # GitHub Secret ile alacağız
+sheet = client.open_by_key(SPREADSHEET_ID).sheet1
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    rows = soup.select("table tbody tr")
+# --- Veri Çekme (USD ve EUR) ---
+def scrape_currency(url, currency_name):
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
+    table = soup.find("table")
     data = []
-
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) < 3:
-            continue
-        try:
-            alis = float(temizle(cols[1].text))
-            satis = float(temizle(cols[2].text))
-        except ValueError:
-            continue
-        banka = cols[0].text.strip()
-        makas = satis - alis
-        data.append([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), kur_adi, banka, alis, satis, makas])
+    if table:
+        rows = table.find_all("tr")
+        for row in rows[1:]:
+            cols = row.find_all("td")
+            if len(cols) >= 3:
+                banka = cols[0].get_text(strip=True)
+                try:
+                    alis = float(cols[1].get_text(strip=True).replace(",", ".").replace(" TL", ""))
+                    satis = float(cols[2].get_text(strip=True).replace(",", ".").replace(" TL", ""))
+                    makas = satis - alis
+                    data.append([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), currency_name, banka, alis, satis, makas])
+                except:
+                    continue
     return data
 
-tum_data = []
-tum_data += scrape_kur("USD", "https://kur.doviz.com/serbest-piyasa/amerikan-dolari")
-tum_data += scrape_kur("EUR", "https://kur.doviz.com/serbest-piyasa/euro")
+data_all = []
+data_all += scrape_currency("https://kur.doviz.com/serbest-piyasa/amerikan-dolari", "USD")
+data_all += scrape_currency("https://kur.doviz.com/serbest-piyasa/euro", "EUR")
 
-csv_dosya = "banka_makas.csv"
-if os.path.exists(csv_dosya):
-    eski_df = pd.read_csv(csv_dosya)
-    yeni_df = pd.DataFrame(tum_data, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
-    df = pd.concat([eski_df, yeni_df], ignore_index=True)
-else:
-    df = pd.DataFrame(tum_data, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
+# --- Sheets'e Yaz ---
+df = pd.DataFrame(data_all, columns=["Tarih", "Kur", "Banka", "Alış", "Satış", "Makas"])
+sheet.clear()
+sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
-df.to_csv(csv_dosya, index=False, encoding="utf-8-sig")
-
-print(df.tail())
+print("Google Sheets güncellendi!")
