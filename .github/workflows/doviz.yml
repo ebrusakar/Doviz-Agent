@@ -21,7 +21,9 @@ jobs:
           pip install pandas requests beautifulsoup4 gspread google-auth
       
       - name: Create service account file
-        run: echo '${{ secrets.GOOGLE_SHEETS_KEY }}' > service_account.json
+        run: |
+          echo "${{ secrets.GOOGLE_SHEETS_KEY }}" > service_account.json
+
       
       - name: Run Script
         env:
