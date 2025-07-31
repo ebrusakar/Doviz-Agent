@@ -21,7 +21,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas requests beautifulsoup4 gspread google-auth
+          pip install pandas requests beautifulsoup4 gspread google-auth selenium webdriver-manager
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
 
       - name: Create service_account.json
         run: printf "%s" "${{ secrets.GOOGLE_SHEETS_KEY_BASE64 }}" | base64 -d > service_account.json
