@@ -72,3 +72,4 @@ flowchart TD
     E -->|Dashboard Visualization| F[Dashboard]
     D --> E
 
+![Panel](https://github.com/ebrusakar/doviz-agent/blob/main/panel.png)
