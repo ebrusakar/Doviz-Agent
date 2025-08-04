@@ -63,7 +63,6 @@ In **Power Query (Power BI):**
 
 # Bank Spread Monitoring Dashboard Flowchart
 
-```mermaid
 flowchart TD
     A[Data Sources] -->|Data| C[Google Sheets]
     B[Live Scraper (Selenium)<br>Web Archive Scraper] -->|Data| C[Google Sheets]
@@ -72,4 +71,5 @@ flowchart TD
     E -->|Dashboard Visualization| F[Dashboard]
     D --> E
 
-![Panel](https://github.com/ebrusakar/doviz-agent/blob/main/panel.png)
+<img src="https://github.com/ebrusakar/doviz-agent/blob/main/panel.png"  width="900" height="500">
+
