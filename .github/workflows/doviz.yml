@@ -1,8 +1,6 @@
 name: Doviz Agent
 
 on:
-  schedule:
-    - cron: "*/30 * * * *"  # Her 30 dakikada bir
   workflow_dispatch:  # Manuel çalıştırma
 
 jobs:
